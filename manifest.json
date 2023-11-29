@@ -1,0 +1,30 @@
+{
+	"manifest_version": 3,
+	"name": "Text Extractor",
+	"version": "0.1",
+	"description": "Image to Text Extractor for ChatGPT",
+	"action": {
+		"default_icon": "/images/icon.png"
+	},
+	"permissions": ["activeTab", "storage"],
+	"host_permissions": ["https://chat.openai.com/*"],
+	"icons": {
+		"16": "images/icon.png"
+	},
+	"web_accessible_resources": [
+		{
+			"resources": ["scripts/*", "images/*"],
+			"matches": ["https://chat.openai.com/*"],
+			"use_dynamic_url": true
+		}
+	],
+	"content_security_policy": {
+		"extension_pages": "script-src 'self'; object-src 'self';"
+	},
+	"content_scripts": [
+		{
+			"js": ["scripts/content.js", "scripts/tesseract.min.js"],
+			"matches": ["https://chat.openai.com/*"]
+		}
+	]
+}
