@@ -13,6 +13,9 @@ const ELEMENT_IDS = {
   script: "image-to-text-content-script",
   uploadButton: "img-upload-button",
   hiddenFileInput: "hidden-file-input",
+  progressIndicator: "extraction-progress",
+  mainDiv: "main-div",
+  overLayer: "over-layer",
 };
 
 let worker = null;
@@ -23,7 +26,6 @@ async function addScript() {
   script.src = chrome.runtime.getURL("scripts/tesseract.min.js");
 
   script.onload = async function () {
-    console.log("Tesseract.js script loaded");
     addExtensionElements();
   };
 
@@ -42,6 +44,16 @@ async function createWorker() {
         "scripts/tesseract.js-core@4.0.3_tesseract-core-simd.wasm.js"
       ),
       langPath: chrome.runtime.getURL("scripts/languages/"),
+      logger: (m) => {
+        if (!m?.progress) return;
+        console.log(m.progress);
+        let progressIndicator = getProgressIndicator();
+        if (progressIndicator) {
+          let val = Math.round(m.progress * 100);
+          progressIndicator.textContent =
+            val < 100 ? `Extracting text... ${val}%` : "";
+        }
+      },
     });
 
     const languages = ["eng"];
@@ -69,6 +81,8 @@ async function addExtensionElements() {
 
   addPasteListener();
   addUploadButton(newWorker);
+  addProgressIndicator();
+  createDragAndDrop();
 }
 
 function handlePaste(e) {
@@ -97,8 +111,7 @@ function addPasteListener() {
 }
 
 function addUploadButton(fileWorker) {
-  let textarea = getTextArea();
-  let textareaParent = textarea.parentElement;
+  let mainDiv = createMainDiv();
 
   let btn = createButton("Upload image", async function (e) {
     e.preventDefault();
@@ -107,7 +120,7 @@ function addUploadButton(fileWorker) {
 
   let fileInput = createFileInput();
 
-  textareaParent.insertBefore(btn, textareaParent.firstChild);
+  mainDiv.appendChild(btn);
 
   fileInput.addEventListener("change", function () {
     if (this.files && this.files[0]) {
@@ -120,6 +133,7 @@ function addUploadButton(fileWorker) {
 
 async function handleFile(file, fileWorker) {
   let textarea = getTextArea();
+  let progressIndicator = getProgressIndicator();
 
   (async () => {
     const { data } = await fileWorker.recognize(file, { rectangle: true });
@@ -128,6 +142,7 @@ async function handleFile(file, fileWorker) {
 
     if (textarea) {
       updateTextareaValue(textarea, text);
+      progressIndicator.innerHTML = "";
     }
   })();
 }
@@ -194,9 +209,87 @@ function createFileInput() {
   return fileInput;
 }
 
+function addProgressIndicator() {
+  let progressIndicator = document.createElement("p");
+  progressIndicator.id = ELEMENT_IDS.progressIndicator;
+
+  // insert into main div
+  let mainDiv = getMainDiv();
+  mainDiv.appendChild(progressIndicator);
+}
+
+function getProgressIndicator() {
+  return document.getElementById(ELEMENT_IDS.progressIndicator);
+}
+
 function updateTextareaValue(textarea, text) {
   textarea.value = textarea.value + text;
   textarea.style.height = "";
   textarea.style.height = textarea.scrollHeight + "px";
   textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+}
+
+function createMainDiv() {
+  let mainDiv = document.createElement("div");
+  mainDiv.id = ELEMENT_IDS.mainDiv;
+  mainDiv.style.display = "flex";
+  mainDiv.style.width = "100%";
+  mainDiv.style.gap = "10px";
+  mainDiv.style.alignItems = "center";
+
+  let textarea = getTextArea();
+  let textareaParent = textarea.parentElement;
+
+  textareaParent.insertBefore(mainDiv, textareaParent.firstChild);
+
+  return mainDiv;
+}
+
+function getMainDiv() {
+  return document.getElementById(ELEMENT_IDS.mainDiv);
+}
+
+function createDragAndDrop() {
+  const overLayer = document.createElement("div");
+  overLayer.id = ELEMENT_IDS.overLayer;
+
+  overLayer.style.position = "fixed";
+  overLayer.style.top = "0";
+  overLayer.style.left = "0";
+  overLayer.style.width = "100%";
+  overLayer.style.height = "100%";
+  overLayer.style.zIndex = "1000";
+  // overLayer.style.display = "none";
+  overLayer.style.margin = "100px";
+  overLayer.style.backgroundColor = "rgba(70,130,180,0.3)";
+  overLayer.style.border = "2px dashed #000000";
+  overLayer.style.borderRadius = "5px";
+  overLayer.style.textAlign = "center";
+  overLayer.style.paddingTop = "30px";
+  overLayer.style.fontSize = "30px";
+  overLayer.style.fontWeight = "bold";
+  overLayer.style.color = "#000000";
+  overLayer.style.cursor = "pointer";
+  overLayer.style.userSelect = "none";
+  overLayer.innerHTML = "Drop image here";
+
+  document.body.appendChild(overLayer);
+  // insert into top of body
+  overLayer.addEventListener(
+    "dragenter",
+    function (e) {
+      e.preventDefault();
+      const fileInput = e.dataTransfer.items[0].getAsFile();
+      // validate file type
+
+      // if (
+      //   !fileInput ||
+      //   fileInput.kind !== "file" ||
+      //   !fileInput.type.startsWith("image/")
+      // )
+      //   return;
+      console.log("proper file");
+    },
+    false
+  );
 }
