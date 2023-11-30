@@ -20,7 +20,7 @@ const ELEMENT_IDS = {
 
 let worker = null;
 
-async function addScript() {
+function addScript() {
   const script = document.createElement("script");
   script.id = ELEMENT_IDS.script;
   script.src = chrome.runtime.getURL("scripts/tesseract.min.js");
@@ -44,16 +44,7 @@ async function createWorker() {
         "scripts/tesseract.js-core@4.0.3_tesseract-core-simd.wasm.js"
       ),
       langPath: chrome.runtime.getURL("scripts/languages/"),
-      logger: (m) => {
-        if (!m?.progress) return;
-        console.log(m.progress);
-        let progressIndicator = getProgressIndicator();
-        if (progressIndicator) {
-          let val = Math.round(m.progress * 100);
-          progressIndicator.textContent =
-            val < 100 ? `Extracting text... ${val}%` : "";
-        }
-      },
+      logger: handleProgress,
     });
 
     const languages = ["eng"];
@@ -71,16 +62,25 @@ async function createWorker() {
   }
 }
 
-async function addExtensionElements() {
-  let newWorker = worker;
+function handleProgress(message) {
+  if (!message?.progress) return;
+  console.log(message.progress);
+  let progressIndicator = getProgressIndicator();
+  if (progressIndicator) {
+    let val = Math.round(message.progress * 100);
+    progressIndicator.textContent =
+      val < 100 ? `Extracting text... ${val}%` : "";
+  }
+}
 
+async function addExtensionElements() {
   if (!worker) {
     console.log("Worker is undefined or null");
-    newWorker = await createWorker();
+    await createWorker();
   }
 
   addPasteListener();
-  addUploadButton(newWorker);
+  addUploadButton();
   addProgressIndicator();
   createDragAndDrop();
 }
@@ -95,7 +95,7 @@ function handlePaste(e) {
       if (items[i].type.indexOf("image") !== -1) {
         e.preventDefault();
         let file = items[i].getAsFile();
-        handleFile(file, worker);
+        handleFile(file);
       }
     }
   }
@@ -110,12 +110,12 @@ function addPasteListener() {
   }
 }
 
-function addUploadButton(fileWorker) {
+function addUploadButton() {
   let mainDiv = createMainDiv();
 
-  let btn = createButton("Upload image", async function (e) {
+  let btn = createButton("Upload image", function (e) {
     e.preventDefault();
-    fileInput.click();
+    getHiddenFileInput().click();
   });
 
   let fileInput = createFileInput();
@@ -124,19 +124,19 @@ function addUploadButton(fileWorker) {
 
   fileInput.addEventListener("change", function () {
     if (this.files && this.files[0]) {
-      handleFile(this.files[0], fileWorker);
+      handleFile(this.files[0]);
       console.log(this.files[0]);
       this.value = null;
     }
   });
 }
 
-async function handleFile(file, fileWorker) {
+async function handleFile(file) {
   let textarea = getTextArea();
   let progressIndicator = getProgressIndicator();
 
   (async () => {
-    const { data } = await fileWorker.recognize(file, { rectangle: true });
+    const { data } = await worker.recognize(file, { rectangle: true });
     let text = calculateIndentation(data);
     console.log(text);
 
@@ -213,7 +213,6 @@ function addProgressIndicator() {
   let progressIndicator = document.createElement("p");
   progressIndicator.id = ELEMENT_IDS.progressIndicator;
 
-  // insert into main div
   let mainDiv = getMainDiv();
   mainDiv.appendChild(progressIndicator);
 }
@@ -245,10 +244,6 @@ function createMainDiv() {
   return mainDiv;
 }
 
-function getMainDiv() {
-  return document.getElementById(ELEMENT_IDS.mainDiv);
-}
-
 function createDragAndDrop() {
   const overLayer = document.createElement("div");
   overLayer.id = ELEMENT_IDS.overLayer;
@@ -259,37 +254,67 @@ function createDragAndDrop() {
   overLayer.style.width = "100%";
   overLayer.style.height = "100%";
   overLayer.style.zIndex = "1000";
-  // overLayer.style.display = "none";
-  overLayer.style.margin = "100px";
-  overLayer.style.backgroundColor = "rgba(70,130,180,0.3)";
-  overLayer.style.border = "2px dashed #000000";
+  overLayer.style.display = "none";
   overLayer.style.borderRadius = "5px";
   overLayer.style.textAlign = "center";
-  overLayer.style.paddingTop = "30px";
-  overLayer.style.fontSize = "30px";
-  overLayer.style.fontWeight = "bold";
-  overLayer.style.color = "#000000";
+  overLayer.style.padding = "5% 10%";
   overLayer.style.cursor = "pointer";
   overLayer.style.userSelect = "none";
-  overLayer.innerHTML = "Drop image here";
+  overLayer.style.backdropFilter = "blur(5px)";
 
+  const innerLayer = document.createElement("div");
+  innerLayer.style.height = "100%";
+  innerLayer.style.borderRadius = "10px";
+  innerLayer.style.backgroundColor = "rgba(0,0,0,0.3)";
+  innerLayer.style.padding = "30px";
+  innerLayer.style.fontSize = "30px";
+  innerLayer.style.fontWeight = "bold";
+  innerLayer.style.color = "#fff";
+  innerLayer.style.cursor = "pointer";
+  innerLayer.style.border = "5px dashed #fff";
+  innerLayer.style.display = "flex";
+  innerLayer.style.alignItems = "center";
+  innerLayer.style.justifyContent = "center";
+  innerLayer.textContent = "Drop image here";
   document.body.appendChild(overLayer);
-  // insert into top of body
-  overLayer.addEventListener(
-    "dragenter",
-    function (e) {
-      e.preventDefault();
-      const fileInput = e.dataTransfer.items[0].getAsFile();
-      // validate file type
+  overLayer.appendChild(innerLayer);
 
-      // if (
-      //   !fileInput ||
-      //   fileInput.kind !== "file" ||
-      //   !fileInput.type.startsWith("image/")
-      // )
-      //   return;
-      console.log("proper file");
-    },
-    false
-  );
+  document.body.addEventListener("dragenter", function (e) {
+    e.preventDefault();
+    overLayer.style.display = "block";
+  });
+
+  overLayer.addEventListener("drop", handleDrop, false);
+  overLayer.addEventListener("dragleave", handleDragLeave, false);
+  overLayer.addEventListener("dragenter", handleDragEnter, false);
+  overLayer.addEventListener("dragover", handleDragEnter, false);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  console.log("drop event");
+  const fileInput = e.dataTransfer.items[0];
+  if (!fileInput || fileInput.kind !== "file") return;
+  if (!fileInput.type.match(/^image\//)) return;
+
+  let file = e.dataTransfer.items[0].getAsFile();
+  handleFile(file);
+
+  let overlay = getOverLayer();
+  overlay.style.display = "none";
+}
+
+function handleDragLeave(e) {
+  e.preventDefault();
+  if (e.relatedTarget) return;
+  let overlay = getOverLayer();
+  overlay.style.display = "none";
+}
+
+function handleDragEnter(e) {
+  e.preventDefault();
+}
+
+function getOverLayer() {
+  return document.getElementById(ELEMENT_IDS.overLayer);
 }
