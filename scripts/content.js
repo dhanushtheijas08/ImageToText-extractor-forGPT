@@ -20,7 +20,7 @@ const ELEMENT_IDS = {
 
 let worker = null;
 
-function addScript() {
+async function addScript() {
   const script = document.createElement("script");
   script.id = ELEMENT_IDS.script;
   script.src = chrome.runtime.getURL("scripts/tesseract.min.js");
@@ -44,7 +44,15 @@ async function createWorker() {
         "scripts/tesseract.js-core@4.0.3_tesseract-core-simd.wasm.js"
       ),
       langPath: chrome.runtime.getURL("scripts/languages/"),
-      logger: handleProgress,
+      logger: (m) => {
+        if (!m?.progress) return;
+        let progressIndicator = getProgressIndicator();
+        if (progressIndicator) {
+          let val = Math.round(m.progress * 100);
+          progressIndicator.textContent =
+            val < 100 ? `Extracting text... ${val}%` : "";
+        }
+      },
     });
 
     const languages = ["eng"];
@@ -62,25 +70,16 @@ async function createWorker() {
   }
 }
 
-function handleProgress(message) {
-  if (!message?.progress) return;
-  console.log(message.progress);
-  let progressIndicator = getProgressIndicator();
-  if (progressIndicator) {
-    let val = Math.round(message.progress * 100);
-    progressIndicator.textContent =
-      val < 100 ? `Extracting text... ${val}%` : "";
-  }
-}
-
 async function addExtensionElements() {
+  let newWorker = worker;
+
   if (!worker) {
     console.log("Worker is undefined or null");
-    await createWorker();
+    newWorker = await createWorker();
   }
 
   addPasteListener();
-  addUploadButton();
+  addUploadButton(newWorker);
   addProgressIndicator();
   createDragAndDrop();
 }
@@ -95,7 +94,7 @@ function handlePaste(e) {
       if (items[i].type.indexOf("image") !== -1) {
         e.preventDefault();
         let file = items[i].getAsFile();
-        handleFile(file);
+        handleFile(file, worker);
       }
     }
   }
@@ -110,12 +109,12 @@ function addPasteListener() {
   }
 }
 
-function addUploadButton() {
+function addUploadButton(fileWorker) {
   let mainDiv = createMainDiv();
 
-  let btn = createButton("Upload image", function (e) {
+  let btn = createButton("Upload image", async function (e) {
     e.preventDefault();
-    getHiddenFileInput().click();
+    fileInput.click();
   });
 
   let fileInput = createFileInput();
@@ -124,19 +123,19 @@ function addUploadButton() {
 
   fileInput.addEventListener("change", function () {
     if (this.files && this.files[0]) {
-      handleFile(this.files[0]);
+      handleFile(this.files[0], fileWorker);
       console.log(this.files[0]);
       this.value = null;
     }
   });
 }
 
-async function handleFile(file) {
+async function handleFile(file, fileWorker) {
   let textarea = getTextArea();
   let progressIndicator = getProgressIndicator();
 
   (async () => {
-    const { data } = await worker.recognize(file, { rectangle: true });
+    const { data } = await fileWorker.recognize(file, { rectangle: true });
     let text = calculateIndentation(data);
     console.log(text);
 
@@ -244,6 +243,10 @@ function createMainDiv() {
   return mainDiv;
 }
 
+function getMainDiv() {
+  return document.getElementById(ELEMENT_IDS.mainDiv);
+}
+
 function createDragAndDrop() {
   const overLayer = document.createElement("div");
   overLayer.id = ELEMENT_IDS.overLayer;
@@ -292,7 +295,6 @@ function createDragAndDrop() {
 
 function handleDrop(e) {
   e.preventDefault();
-  console.log("drop event");
   const fileInput = e.dataTransfer.items[0];
   if (!fileInput || fileInput.kind !== "file") return;
   if (!fileInput.type.match(/^image\//)) return;
