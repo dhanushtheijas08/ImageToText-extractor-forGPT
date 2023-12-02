@@ -1,12 +1,4 @@
-console.log("hi");
-
-const OPTIONS = {
-  formatOutput: true,
-  showUploadButton: true,
-  showLanguageButton: true,
-  enableDirectPasting: true,
-  enableDragAndDrop: true,
-};
+let worker = null;
 
 const ELEMENT_IDS = {
   textarea: "prompt-textarea",
@@ -24,7 +16,6 @@ const BUTTONS = {
 
   audioBtn: `<svg width="24px" height="24px" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" stroke-width="3" stroke="#fff" fill="none"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M47.67,28.43v3.38a15.67,15.67,0,0,1-31.34,0V28.43" stroke-linecap="round"></path><rect x="22.51" y="6.45" width="18.44" height="34.22" rx="8.89" stroke-linecap="round"></rect><line x1="31.73" y1="57.34" x2="31.73" y2="47.71" stroke-linecap="round"></line><line x1="37.14" y1="57.55" x2="26.43" y2="57.55" stroke-linecap="round"></line></g></svg>`,
 };
-let worker = null;
 
 async function addScript() {
   const script = document.createElement("script");
@@ -349,31 +340,163 @@ function getOverLayer() {
 }
 
 // for audio
+// let isListening = false;
 
 function createAudioButton() {
-  let isRecording = false;
-  const recognition = new (window.SpeechRecognition ||
-    window.webkitSpeechRecognition)();
-  recognition.lang = "en-US";
-
-  const audioBtn = createButton("", "audio");
   const mainDiv = getMainDiv();
+  const audioBtn = createButton("Audio", "audio");
 
   mainDiv.appendChild(audioBtn);
-  audioBtn.addEventListener("click", () => {
-    if (isRecording) {
-      recognition.stop();
-      isRecording = false;
-      return;
-    }
-    isRecording = true;
-    recognition.start();
-  });
+  const recognition = initializeAudioToText();
+  audioBtn.addEventListener("click", (e) =>
+    handleAudioButtonClick(recognition, e)
+  );
 
-  recognition.onresult = (e) => {
+  recognition.addEventListener("result", (e) => {
     console.log(e);
-    const transcript = e.results[0][0].transcript;
-  };
-
-  // recognition.onend = () => console.log("complete");
+  });
 }
+
+function initializeAudioToText() {
+  console.log("Starting audio to text initialization");
+  // recognition = new (window.SpeechRecognition ||
+  //   window.webkitSpeechRecognition)();
+  recognition = new SpeechRecognition();
+  // recognition.lang = "en-US";
+
+  // recognition.continuous = true;
+  // recognition.interimResults = true;
+
+  // recognition.onstart = function () {
+  //   console.log("started");
+  // };
+
+  // recognition.onend = function () {
+  //   console.log("ended");
+  // };
+
+  console.log("Finished audio to text initialization");
+
+  return recognition;
+}
+
+function updateOutputDiv(transcript) {
+  console.log(transcript);
+  // const outputDiv = document.getElementById("outputDiv");
+  // if (outputDiv) {
+  //   outputDiv.textContent = transcript;
+  // }
+}
+
+function handleAudioButtonClick(recognition, e) {
+  console.log("clicked");
+  // console.log(isListening);
+  e.preventDefault();
+  recognition.start();
+  // if (isListening) {
+  //   recognition.stop();
+  //   isListening = false;
+  //   console.log("On Stop" + isListening);
+  // } else {
+  //   isListening = true;
+  //   console.log("On Start" + isListening);
+  // }
+}
+// ############
+
+// var recognition,
+//   div,
+//   languageSelected,
+//   isStopButtonClicked = false;
+
+// const init = () => {
+//   div = document.createElement("div");
+//   div.className = "live-caption";
+
+//   setDivStyle(div);
+
+//   recognition = new webkitSpeechRecognition();
+//   recognition.continuous = false;
+//   recognition.interimResults = true;
+//   recognition.lang = languageSelected || "en-US";
+
+//   recognition.onresult = (event) => {
+//     let last = event.results.length - 1;
+//     let lastTranscript = event.results[last][0].transcript;
+//     let interim_transcript = "";
+//     let final_transcript = "";
+
+//     for (var i = event.resultIndex; i < event.results.length; ++i) {
+//       // Verify if the recognized text is the last with the isFinal property
+//       if (event.results[i].isFinal) {
+//         final_transcript += event.results[i][0].transcript;
+//       } else {
+//         interim_transcript += event.results[i][0].transcript;
+//       }
+//     }
+
+//     div.textContent = interim_transcript;
+//     document.body.appendChild(div);
+//   };
+
+//   recognition.onerror = (event) => {
+//     console.log("error", event.error);
+//     if (event.error === "not-allowed") {
+//       const errorMessage =
+//         "AudioCapture permission has been blocked because of a Feature Policy applied to the current document. See https://goo.gl/EuHzyv for more details.";
+//       chrome.runtime.sendMessage({ error: errorMessage });
+//       isStopButtonClicked = true;
+//       recognition.stop();
+//     }
+//   };
+
+//   recognition.onspeechstart = (event) => console.log("speech started");
+//   recognition.onspeechend = (event) => stopTracking();
+//   recognition.onend = function (event) {
+//     if (isStopButtonClicked) {
+//       stopTracking();
+//     } else {
+//       startTracking();
+//     }
+//   };
+// };
+
+// const startTracking = () => recognition.start();
+
+// const setDivStyle = (div) => {
+//   div.style.bottom = "10px";
+//   div.style.left = 0;
+//   div.style.textAlign = "center";
+//   div.style.backgroundColor = "rgba(0,0,0,0.8)";
+//   div.style.position = "absolute";
+//   div.style.color = "white";
+//   div.style.padding = "10px";
+//   div.style.fontSize = "30px";
+//   div.style.width = "50%";
+//   div.style.transform = "translate(50%)";
+//   div.style.border = "2px solid white";
+//   div.style.borderRadius = "5px";
+//   div.style.zIndex = "10000";
+//   div.style.fontFamily = "Arial";
+// };
+
+// const stopTracking = () => {
+//   recognition.stop();
+//   if (document.body.contains(div)) {
+//     document.body.removeChild(div);
+//   }
+// };
+
+// init();
+
+// chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+//   if (request.data === "start") {
+//     isStopButtonClicked = false;
+//     startTracking();
+//   } else if (request.data === "stop") {
+//     isStopButtonClicked = true;
+//     stopTracking();
+//   } else {
+//     languageSelected = request.data;
+//   }
+// });
