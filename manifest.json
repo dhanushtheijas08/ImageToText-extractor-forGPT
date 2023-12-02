@@ -4,12 +4,14 @@
 	"version": "0.1",
 	"description": "Image to Text Extractor for ChatGPT",
 	"action": {
-		"default_icon": "/images/icon.png"
+		"default_icon": "/images/32.png"
 	},
 	"permissions": ["activeTab", "storage"],
 	"host_permissions": ["https://chat.openai.com/*"],
 	"icons": {
-		"16": "images/icon.png"
+		"16": "images/16.png",
+		"32": "images/32.png",
+		"128": "images/128.png"
 	},
 	"web_accessible_resources": [
 		{
