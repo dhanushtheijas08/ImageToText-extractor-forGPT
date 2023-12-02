@@ -79,7 +79,7 @@ async function addExtensionElements() {
   addPasteListener();
   addProgressIndicator();
   createDragAndDrop();
-  createAudioButton();
+  // createAudioButton();
 }
 
 function handlePaste(e) {
