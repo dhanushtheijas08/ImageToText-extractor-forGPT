@@ -115,7 +115,7 @@ function addUploadButton(fileWorker) {
     fileInput.click();
   }
 
-  let btn = createButton("Upload file", "file");
+  let btn = createButton("Upload Image", "file");
   btn.addEventListener("click", handleButtonClick);
   let fileInput = createFileInput();
 
@@ -339,69 +339,69 @@ function getOverLayer() {
   return document.getElementById(ELEMENT_IDS.overLayer);
 }
 
-// for audio
-// let isListening = false;
+// // for audio
+// // let isListening = false;
 
-function createAudioButton() {
-  const mainDiv = getMainDiv();
-  const audioBtn = createButton("Audio", "audio");
+// function createAudioButton() {
+//   const mainDiv = getMainDiv();
+//   const audioBtn = createButton("Audio", "audio");
 
-  mainDiv.appendChild(audioBtn);
-  const recognition = initializeAudioToText();
-  audioBtn.addEventListener("click", (e) =>
-    handleAudioButtonClick(recognition, e)
-  );
+//   mainDiv.appendChild(audioBtn);
+//   const recognition = initializeAudioToText();
+//   audioBtn.addEventListener("click", (e) =>
+//     handleAudioButtonClick(recognition, e)
+//   );
 
-  recognition.addEventListener("result", (e) => {
-    console.log(e);
-  });
-}
+//   recognition.addEventListener("result", (e) => {
+//     console.log(e);
+//   });
+// }
 
-function initializeAudioToText() {
-  console.log("Starting audio to text initialization");
-  // recognition = new (window.SpeechRecognition ||
-  //   window.webkitSpeechRecognition)();
-  recognition = new SpeechRecognition();
-  // recognition.lang = "en-US";
+// function initializeAudioToText() {
+//   console.log("Starting audio to text initialization");
+//   // recognition = new (window.SpeechRecognition ||
+//   //   window.webkitSpeechRecognition)();
+//   recognition = new SpeechRecognition();
+//   // recognition.lang = "en-US";
 
-  // recognition.continuous = true;
-  // recognition.interimResults = true;
+//   // recognition.continuous = true;
+//   // recognition.interimResults = true;
 
-  // recognition.onstart = function () {
-  //   console.log("started");
-  // };
+//   // recognition.onstart = function () {
+//   //   console.log("started");
+//   // };
 
-  // recognition.onend = function () {
-  //   console.log("ended");
-  // };
+//   // recognition.onend = function () {
+//   //   console.log("ended");
+//   // };
 
-  console.log("Finished audio to text initialization");
+//   console.log("Finished audio to text initialization");
 
-  return recognition;
-}
+//   return recognition;
+// }
 
-function updateOutputDiv(transcript) {
-  console.log(transcript);
-  // const outputDiv = document.getElementById("outputDiv");
-  // if (outputDiv) {
-  //   outputDiv.textContent = transcript;
-  // }
-}
+// function updateOutputDiv(transcript) {
+//   console.log(transcript);
+//   // const outputDiv = document.getElementById("outputDiv");
+//   // if (outputDiv) {
+//   //   outputDiv.textContent = transcript;
+//   // }
+// }
 
-function handleAudioButtonClick(recognition, e) {
-  console.log("clicked");
-  // console.log(isListening);
-  e.preventDefault();
-  recognition.start();
-  // if (isListening) {
-  //   recognition.stop();
-  //   isListening = false;
-  //   console.log("On Stop" + isListening);
-  // } else {
-  //   isListening = true;
-  //   console.log("On Start" + isListening);
-  // }
-}
+// function handleAudioButtonClick(recognition, e) {
+//   console.log("clicked");
+//   // console.log(isListening);
+//   e.preventDefault();
+//   recognition.start();
+//   // if (isListening) {
+//   //   recognition.stop();
+//   //   isListening = false;
+//   //   console.log("On Stop" + isListening);
+//   // } else {
+//   //   isListening = true;
+//   //   console.log("On Start" + isListening);
+//   // }
+// }
 // ############
 
 // var recognition,
