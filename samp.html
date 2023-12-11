@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button>ADD</button>
+    <script>
+      const btn = document.querySelector("button");
+      console.log(btn);
+
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      //   recognition.lang = "en-US";
+
+      recognition.onresult = (e) => {
+        e.preventDefault();
+        console.log(recognition);
+      };
+      btn.addEventListener("click", () => {
+        recognition.start();
+      });
+    </script>
+  </body>
+</html>
