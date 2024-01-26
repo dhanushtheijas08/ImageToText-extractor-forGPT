@@ -1,6 +1,5 @@
 let worker = null;
 
-console.log(worker);
 const ELEMENT_IDS = {
   textarea: "prompt-textarea",
   script: "image-to-text-content-script",
