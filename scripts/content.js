@@ -1,5 +1,6 @@
 let worker = null;
 
+console.log(worker);
 const ELEMENT_IDS = {
   textarea: "prompt-textarea",
   script: "image-to-text-content-script",
@@ -17,16 +18,6 @@ const BUTTONS = {
   audioBtn: `<svg width="24px" height="24px" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" stroke-width="3" stroke="#fff" fill="none"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M47.67,28.43v3.38a15.67,15.67,0,0,1-31.34,0V28.43" stroke-linecap="round"></path><rect x="22.51" y="6.45" width="18.44" height="34.22" rx="8.89" stroke-linecap="round"></rect><line x1="31.73" y1="57.34" x2="31.73" y2="47.71" stroke-linecap="round"></line><line x1="37.14" y1="57.55" x2="26.43" y2="57.55" stroke-linecap="round"></line></g></svg>`,
 };
 const targetNode = document.body;
-
-// const callback = function (mutationsList, observer) {
-//   for (const mutation of mutationsList) {
-//     if (mutation.type === "childList")
-//   }
-// };
-// const config = { attributes: false, childList: true, subtree: false };
-// const observer = new MutationObserver(callback);
-
-// observer.observe(targetNode, config);
 
 async function addScript() {
   const script = document.createElement("script");
@@ -348,72 +339,3 @@ function handleDragEnter(e) {
 function getOverLayer() {
   return document.getElementById(ELEMENT_IDS.overLayer);
 }
-
-// audio
-
-function audioButton() {
-  let mainDiv = getMainDiv();
-
-  let btn = createButton("Audio", "audio");
-  const utterance = new SpeechSynthesisUtterance();
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  btn.addEventListener("click", function () {
-    utterance.text = "Hello, how are you today?";
-    window.speechSynthesis.speak(utterance);
-    if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-
-      recognition.onstart = () => {
-        console.log("Speech recognition started.");
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        console.log("Speech recognized:", transcript);
-      };
-
-      recognition.onerror = (event) => {
-        console.error("Speech recognition error:", event.error);
-      };
-
-      recognition.onend = () => {
-        console.log("Speech recognition ended.");
-      };
-
-      recognition.start();
-    } else {
-      console.error("Speech recognition not supported in this browser.");
-    }
-  });
-
-  mainDiv.appendChild(btn);
-}
-function audio() {}
-// // Check if the browser supports the Web Speech API
-// if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
-//   // Create a new SpeechRecognition instance
-//   const recognition =
-//     new window.SpeechRecognition() || new webkitSpeechRecognition();
-
-//   // Set up event handlers
-//   recognition.onstart = () => {
-//     console.log("Speech recognition started.");
-//   };
-
-//   recognition.onresult = (event) => {
-//     // event.results is an array of SpeechRecognitionResult objects
-//     const transcript = event.results[0][0].transcript;
-//     console.log("Speech recognized:", transcript);
-//   };
-
-//   recognition.onend = () => {
-//     console.log("Speech recognition ended.");
-//   };
-
-//   // Start recognition
-//   recognition.start();
-// } else {
-//   console.error("Speech recognition not supported in this browser.");
-// }
